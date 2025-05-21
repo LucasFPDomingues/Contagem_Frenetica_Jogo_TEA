@@ -1,10 +1,9 @@
 import pygame
 import sys
-import logica_total as jogo  # Certifique-se de que este arquivo está no mesmo diretório
+import logica_total as jogo
 
 pygame.init()
 
-# Configurações de tela e fonte
 largura, altura = 1280, 680
 tela = pygame.display.set_mode((largura, altura))
 pygame.display.set_caption("Contagem Frenética")
@@ -13,14 +12,12 @@ fonte_grande = pygame.font.SysFont(None, 120)
 fonte_media = pygame.font.SysFont(None, 60)
 fonte_pequena = pygame.font.SysFont(None, 40)
 
-# Cores
 ROXO = (128, 0, 128)
 VERDE = (0, 255, 0)
 VIOLETA = (238, 130, 238)
 BRANCO = (255, 255, 255)
 PRETO = (0, 0, 0)
 
-# Botões
 botao_facil = pygame.Rect(largura//2 - 150, 200, 300, 60)
 botao_medio = pygame.Rect(largura//2 - 150, 300, 300, 60)
 botao_dificil = pygame.Rect(largura//2 - 150, 400, 300, 60)
@@ -80,14 +77,13 @@ def main():
                     if resultado == "voltar_inicio":
                         tela_atual = "inicio"
 
-        # Exibir tela apropriada
         if tela_atual == "inicio":
             mostrar_tela_inicial()
         elif tela_atual == "menu":
             mostrar_tela_menu()
 
         pygame.display.flip()
-
+        
     pygame.quit()
     sys.exit()
 
