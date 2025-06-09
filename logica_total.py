@@ -3,6 +3,8 @@ import pygame
 import time
 import random
 import math
+import serial
+import sys
 
 pygame.init()
 tela = pygame.display.set_mode((1280, 680))
@@ -123,8 +125,22 @@ def verificar_resposta():
     return mensagens
 
 def executar_jogo(dificuldade):
-    global nivel
+    global nivel, contadores
     nivel = nivel_fase(dificuldade)
+    contadores = {
+        'circulos_vermelhos': 0,
+        'circulos_azuis': 0,
+        'quadrados_vermelhos': 0,
+        'quadrados_azuis': 0
+    }
+
+    try:
+        arduino = serial.Serial('COM4', 9600)  # Substitua COM3 pela sua porta real
+        time.sleep(2)  # Aguarda conexão estabilizar
+        arduino.reset_input_buffer()
+    except serial.SerialException:
+        arduino = None
+        print("⚠️ Arduino não conectado.")
     gerar_formas()
     desenhar_figuras()
     inicio = time.time()
@@ -135,6 +151,7 @@ def executar_jogo(dificuldade):
         tempo_restante = max(0, int(nivel['tempo_limite'] - tempo_passado))
 
         for evento in pygame.event.get():
+            
             if evento.type == pygame.QUIT:
                 executando = False
 
@@ -166,8 +183,69 @@ def executar_jogo(dificuldade):
                         msg = fonte.render(linha, True, PRETO)
                         tela.blit(msg, (100, 250 + i * 30))
                     pygame.display.flip()
-                    time.sleep(10)
+                    # Espera por até 10 segundos ou até apertar espaço
+                    inicio_espera = time.time()
+                    esperando = True
+
+                    while esperando and time.time() - inicio_espera < 10:
+                        for evento in pygame.event.get():
+                            if evento.type == pygame.QUIT:
+                                pygame.quit()
+                                sys.exit()
+                            elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+                                esperando = False
+                        pygame.time.delay(100)
+
                     return "voltar_inicio"
+                
+                # Leitura da serial
+        if arduino and arduino.in_waiting > 0:
+            comando = arduino.readline().decode().strip()
+            print(f"[Arduino] Comando recebido: {comando}")
+
+            if comando == 'Q':
+                contadores['circulos_vermelhos'] += 1
+            elif comando == 'A':
+                if contadores['circulos_vermelhos'] > 0:
+                    contadores['circulos_vermelhos'] -= 1
+            elif comando == 'W':
+                contadores['circulos_azuis'] += 1
+            elif comando == 'S':
+                if contadores['circulos_azuis'] > 0:
+                    contadores['circulos_azuis'] -= 1
+            elif comando == 'E':
+                contadores['quadrados_vermelhos'] += 1
+            elif comando == 'D':
+                if contadores['quadrados_vermelhos'] > 0:
+                    contadores['quadrados_vermelhos'] -= 1
+            elif comando == 'R':
+                contadores['quadrados_azuis'] += 1
+            elif comando == 'F':
+                if contadores['quadrados_azuis'] > 0:
+                    contadores['quadrados_azuis'] -= 1
+            elif (comando == ' ') or (comando == "espaco"):
+                resultados = verificar_resposta()
+                tela.fill(BRANCO)
+                for i, linha in enumerate(resultados):
+                    msg = fonte.render(linha, True, PRETO)
+                    tela.blit(msg, (100, 250 + i * 30))
+                pygame.display.flip()
+                # Espera por até 10 segundos ou até apertar espaço
+                inicio_espera = time.time()
+                esperando = True
+
+                while esperando and time.time() - inicio_espera < 10:
+                    for evento in pygame.event.get():
+                        if evento.type == pygame.QUIT:
+                            pygame.quit()
+                            sys.exit()
+                        elif (evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE) or (arduino.readline().decode().strip() == "espaco"):
+                            esperando = False
+                    pygame.time.delay(100)
+
+                return "voltar_inicio"
+
+
 
         if tempo_passado > nivel['tempo_limite']:
             resultados = verificar_resposta()
@@ -178,7 +256,19 @@ def executar_jogo(dificuldade):
                 msg = fonte.render(linha, True, PRETO)
                 tela.blit(msg, (100, 260 + i * 30))
             pygame.display.flip()
-            time.sleep(10)
+            # Espera por até 10 segundos ou até apertar espaço
+            inicio_espera = time.time()
+            esperando = True
+
+            while esperando and time.time() - inicio_espera < 10:
+                for evento in pygame.event.get():
+                    if evento.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+                    elif evento.type == pygame.KEYDOWN and evento.key == pygame.K_SPACE:
+                        esperando = False
+                pygame.time.delay(100)
+
             return "voltar_inicio"
 
         desenhar_figuras()
